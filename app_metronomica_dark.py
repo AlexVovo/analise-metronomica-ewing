@@ -9,13 +9,33 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 import streamlit as st
 
+from pathlib import Path
+
+# raiz do projeto (onde o Streamlit clona o repo)
+PROJECT_ROOT = Path.cwd()
+
+def find_file(filename: str) -> Path:
+    matches = list(PROJECT_ROOT.rglob(filename))
+    if not matches:
+        st.error(
+            f"❌ Arquivo '{filename}' NÃO encontrado no repositório.\n\n"
+            f"Diretório base: {PROJECT_ROOT}"
+        )
+        st.stop()
+    return matches[0]
+
+
+METRO_FILE = find_file("planilha-metronomica-filtrada.xlsx")
+BASELINE_FILE = find_file("1_202407_Baseline.xlsx")
+
+
 # =========================================================
 # 📁 PATHS — ROBUSTO PARA DEPLOY
 # =========================================================
-PROJECT_ROOT = os.getcwd()
+# PROJECT_ROOT = os.getcwd()
 
-METRO_FILE = os.path.join(PROJECT_ROOT, "planilha-metronomica-filtrada.xlsx")
-BASELINE_FILE = os.path.join(PROJECT_ROOT, "1_202407_Baseline.xlsx")
+# METRO_FILE = os.path.join(PROJECT_ROOT, "planilha-metronomica-filtrada.xlsx")
+# BASELINE_FILE = os.path.join(PROJECT_ROOT, "1_202407_Baseline.xlsx")
 
 # =========================================================
 # 📁 PATHS
