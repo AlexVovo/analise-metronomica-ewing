@@ -4,7 +4,7 @@ __pycache__/
 *.pyc
 
 # Dados e resultados
-*.xlsx
+# *.xlsx
 *.sav
 *.csv
 *.json
