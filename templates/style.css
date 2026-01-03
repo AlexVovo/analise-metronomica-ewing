@@ -56,7 +56,11 @@ h1 {
   font-weight: 700;
   color: #0c5a32;
   text-align: center;
+
+  /* 👇 AJUSTE PARA NÃO CORTAR NO TOPO */
+  margin-top: 20px;
 }
+
 
 h2 {
   font-size: 20px;

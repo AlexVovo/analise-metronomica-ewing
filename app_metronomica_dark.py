@@ -11,6 +11,14 @@ import streamlit as st
 
 
 # =========================================================
+# 📁 PATHS
+# =========================================================
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+METRO_FILE = os.path.join(BASE_DIR, "planilha-metronomica-filtrada.xlsx")
+BASELINE_FILE = os.path.join(BASE_DIR, "1_202407_Baseline.xlsx")
+
+
+# =========================================================
 # 🌙 CONFIG STREAMLIT
 # =========================================================
 st.set_page_config(
@@ -19,7 +27,7 @@ st.set_page_config(
 )
 
 # =========================================================
-# 📌 TÍTULO PRINCIPAL
+# 📌 TÍTULO
 # =========================================================
 st.title("📊 Relatório Técnico – Tratamento Metronômico no Sarcoma de Ewing")
 st.caption(
@@ -28,127 +36,99 @@ st.caption(
 )
 
 # =========================================================
-# 🌑 DARK MODE (CSS – BASE + TABELAS)
+# 📊 DADOS DEMOGRÁFICOS
+# =========================================================
+st.header("📊 Dados demográficos")
+
+st.markdown("""
+<p style="text-align: justify;">
+A tabela abaixo mostra a porcentagem de cada variável relacionada aos pacientes analisados
+no estudo. Cada porcentagem foi calculada baseada no número de pacientes (n) que aderiram
+à metronômica (n=96), não aderiram (n=138). Também foi calculado para toda a coorte (n=234).
+</p>
+""", unsafe_allow_html=True)
+
+demo_df = pd.DataFrame({
+    "Variável": [
+        "Gênero (Masculino)",
+        "Gênero (Feminino)",
+        "Local (Pélvico)",
+        "Local (Não pélvico)",
+        "Tamanho do tumor (> 8 cm)",
+        "Tamanho do tumor (< 8 cm)",
+        "Idade (> 14 anos)",
+        "Idade (< 14 anos)",
+        "Range",
+        "Média",
+    ],
+    "Metronômica (sim) - n=96": [
+        "58 (60.4%)",
+        "38 (39.6%)",
+        "19 (19.8%)",
+        "77 (80.2%)",
+        "46 (47.9%)",
+        "50 (52.1%)",
+        "26 (27.1%)",
+        "70 (72.9%)",
+        "1.06 – 26.75",
+        "11.17",
+    ],
+    "Metronômica (não) - n=138": [
+        "77 (55.8%)",
+        "61 (44.2%)",
+        "23 (16.7%)",
+        "115 (83.3%)",
+        "71 (51.4%)",
+        "67 (48.6%)",
+        "42 (30.4%)",
+        "96 (69.6%)",
+        "0.16 – 19.06",
+        "10.60",
+    ],
+    "Total - n=234": [
+        "135 (57.7%)",
+        "99 (42.3%)",
+        "42 (17.9%)",
+        "192 (82.1%)",
+        "117 (50.0%)",
+        "117 (50.0%)",
+        "68 (29.1%)",
+        "166 (70.9%)",
+        "0.16 – 26.75",
+        "10.83",
+    ],
+})
+
+st.subheader("Distribuição dos pacientes por características")
+st.dataframe(demo_df, use_container_width=True)
+
+st.divider()
+
+
+# =========================================================
+# 🌑 DARK MODE (CSS)
 # =========================================================
 st.markdown("""
 <style>
-
-/* ===== BASE ===== */
 html, body, [class*="css"] {
-    background-color: #0f2233 !important;
-    color: #e6eef5 !important;
+    background-color: #0f2233;
+    color: #e6eef5;
 }
-
-/* ===== TÍTULOS ===== */
 h1, h2, h3, h4 {
-    color: #7fd6a4 !important;
+    color: #7fd6a4;
 }
-
-/* ===== TEXTO ===== */
-p, span, li, label {
-    color: #e6eef5 !important;
-}
-
-/* ===== CONTAINER ===== */
 .block-container {
     padding-top: 1.5rem;
-    background-color: #0f2233 !important;
 }
-
-/* ===== SIDEBAR ===== */
 [data-testid="stSidebar"] {
-    background-color: #0c1c2b !important;
+    background-color: #0c1c2b;
     border-left: 3px solid #2e7d5b;
 }
-[data-testid="stSidebar"] * {
-    color: #e6eef5 !important;
+[data-testid="stDataFrame"] {
+    background-color: #12293d;
 }
-
-/* =========================================================
-   🟦 DATAFRAMES – DARK MODE REAL
-   ========================================================= */
-
-/* container */
-[data-testid="stDataFrame"], 
-[data-testid="stTable"] {
-    background-color: #12293d !important;
-}
-
-/* header */
-[data-testid="stDataFrame"] thead tr th {
-    background-color: #16344f !important;
-    color: #9fe0bd !important;
-    border-bottom: 1px solid #2e7d5b !important;
-}
-
-/* body cells */
-[data-testid="stDataFrame"] tbody tr td {
-    background-color: #12293d !important;
-    color: #e6eef5 !important;
-    border-bottom: 1px solid #1f3a52 !important;
-}
-
-/* hover */
-[data-testid="stDataFrame"] tbody tr:hover td {
-    background-color: #1a3a55 !important;
-}
-
-/* index column */
-[data-testid="stDataFrame"] tbody tr th {
-    background-color: #12293d !important;
-    color: #9fe0bd !important;
-}
-
-/* scrollbar */
-[data-testid="stDataFrame"] ::-webkit-scrollbar {
-    height: 8px;
-    width: 8px;
-}
-[data-testid="stDataFrame"] ::-webkit-scrollbar-thumb {
-    background-color: #2e7d5b;
-    border-radius: 4px;
-}
-
-/* ===== INPUTS ===== */
-input, textarea, select {
-    background-color: #12293d !important;
-    color: #e6eef5 !important;
-    border: 1px solid #2e7d5b !important;
-}
-
-/* ===== BOTÕES ===== */
-button {
-    background-color: #1f6f54 !important;
-    color: #ffffff !important;
-    border-radius: 6px;
-}
-button:hover {
-    background-color: #2e7d5b !important;
-}
-
-/* ===== CHECKBOX / RADIO ===== */
-input[type="checkbox"], input[type="radio"] {
-    accent-color: #7fd6a4;
-}
-
-/* ===== GRÁFICOS ===== */
-figure, svg {
-    background-color: #0f2233 !important;
-}
-
 </style>
 """, unsafe_allow_html=True)
-
-
-# =========================================================
-# 📁 PATHS
-# =========================================================
-BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-
-metro_file = os.path.join(BASE_DIR, "planilha-metronomica-filtrada.xlsx")
-baseline_file = os.path.join(BASE_DIR, "1_202407_Baseline.xlsx")
-
-
 
 
 # =========================================================
@@ -156,77 +136,130 @@ baseline_file = os.path.join(BASE_DIR, "1_202407_Baseline.xlsx")
 # =========================================================
 @st.cache_data
 def load_data():
-    metro = pd.read_excel(metro_file) if os.path.exists(metro_file) else pd.DataFrame()
-    baseline = pd.read_excel(baseline_file) if os.path.exists(baseline_file) else pd.DataFrame()
+    metro = pd.read_excel(METRO_FILE) if os.path.exists(METRO_FILE) else pd.DataFrame()
+    baseline = pd.read_excel(BASELINE_FILE) if os.path.exists(BASELINE_FILE) else pd.DataFrame()
     return metro, baseline
 
 metro, baseline = load_data()
 
-
 # =========================================================
-# 🧹 PADRONIZAÇÃO – METRONÔMICA
+# 🚨 VERIFICAÇÃO
 # =========================================================
-if not metro.empty:
-    metro.columns = (
-        metro.columns.str.lower()
-        .str.strip()
-        .str.normalize("NFKD")
-        .str.encode("ascii", errors="ignore")
-        .str.decode("utf-8")
-        .str.replace(" ", "_")
+if metro.empty:
+    st.error(
+        "❌ Arquivo planilha-metronomica-filtrada.xlsx não encontrado ou vazio.\n\n"
+        f"Esperado em: {BASE_DIR}"
     )
-
-    if "id_paciente" not in metro.columns:
-        for c in metro.columns:
-            if c.startswith("id"):
-                metro.rename(columns={c: "id_paciente"}, inplace=True)
-                break
-
-    ciclo_col = next((c for c in metro.columns if "ciclo" in c), None)
-    if ciclo_col is None:
-        metro["ciclo"] = 1
-        ciclo_col = "ciclo"
-else:
-    ciclo_col = "ciclo"
+    st.stop()
 
 
 # =========================================================
-# 🧹 BASELINE
+# 🧹 PADRONIZAÇÃO DAS COLUNAS
+# =========================================================
+metro.columns = (
+    metro.columns.str.lower()
+    .str.strip()
+    .str.normalize("NFKD")
+    .str.encode("ascii", errors="ignore")
+    .str.decode("utf-8")
+    .str.replace(" ", "_")
+)
+
+# =========================================================
+# 🔧 GARANTIA DE id_paciente
+# =========================================================
+if "id_paciente" not in metro.columns:
+    for c in metro.columns:
+        if c.startswith("id"):
+            metro.rename(columns={c: "id_paciente"}, inplace=True)
+            break
+
+if "id_paciente" not in metro.columns:
+    st.error("❌ Coluna de identificação do paciente não encontrada.")
+    st.stop()
+
+# =========================================================
+# 🔧 GARANTIA ÚNICA DE CICLO
+# =========================================================
+metro = metro.sort_values("id_paciente")
+metro["ciclo"] = metro.groupby("id_paciente").cumcount() + 1
+ciclo_col = "ciclo"
+
+
+# =========================================================
+# 📌 BASELINE
 # =========================================================
 def calcular_idade(d):
     try:
         d = pd.to_datetime(d)
         hoje = date.today()
         return hoje.year - d.year - ((hoje.month, hoje.day) < (d.month, d.day))
-    except Exception:
+    except:
         return None
 
 baseline_view = pd.DataFrame()
 
 if not baseline.empty:
     baseline.columns = baseline.columns.str.lower().str.strip()
-
     if "data de nascimento" in baseline.columns:
-        baseline["idade"] = (
-            pd.to_datetime(baseline["data de nascimento"], errors="coerce")
-            .apply(calcular_idade)
-        )
+        baseline["idade"] = pd.to_datetime(
+            baseline["data de nascimento"], errors="coerce"
+        ).apply(calcular_idade)
 
     remover = [
-        "nome", "sobrenome", "iniciais", "rg",
-        "instituição", "registro hospitalar",
-        "data de nascimento", "data tcle"
+        "nome","sobrenome","iniciais","rg",
+        "instituição","registro hospitalar",
+        "data de nascimento","data tcle"
     ]
 
     baseline = baseline[[c for c in baseline.columns if c not in remover]]
     baseline.rename(columns={"id": "id_paciente"}, inplace=True)
     baseline_view = baseline.head(20)
 
+st.header("📌 Baseline (20 primeiros registros — anonimizado)")
+st.dataframe(baseline_view, use_container_width=True)
+st.divider()
+
 
 # =========================================================
 # 🧾 Nº DE CICLOS POR PACIENTE
 # =========================================================
-st.header("🧾 Nº de ciclos por paciente")
+
+
+cycles_df = pd.DataFrame(
+    [["N_pacientes", 96,93,90,88,82,74,71,71,69,68,66,62,35,15,4,2,1,1,1]],
+    columns=["Métrica"] + [f"Ciclo_{i}" for i in range(1, 20)]
+)
+
+st.subheader("🧾 Número de pacientes por ciclo")
+st.dataframe(cycles_df, use_container_width=True)
+
+
+# =========================================================
+# 🧾 HEATMAP — PRESENÇA DE CICLOS
+# =========================================================
+st.subheader("🧾 Heatmap — Presença de ciclos por paciente")
+
+df_presenca = metro[["id_paciente", "ciclo"]].copy()
+df_presenca["presente"] = 1
+
+hm_presenca = (
+    df_presenca
+    .pivot_table(
+        index="ciclo",
+        columns="id_paciente",
+        values="presente",
+        aggfunc="max"
+    )
+    .fillna(0)
+)
+
+fig, ax = plt.subplots(figsize=(16, 6))
+sns.heatmap(hm_presenca, cmap="Blues", ax=ax)
+ax.set_xlabel("Paciente")
+ax.set_ylabel("Ciclo")
+st.pyplot(fig)
+plt.close(fig)
 
 st.markdown("""
 <p style="text-align: justify;">
@@ -237,149 +270,34 @@ ausência de dados.
 </p>
 """, unsafe_allow_html=True)
 
-cycles_df = pd.DataFrame(
-    [["N_pacientes", 96,93,90,88,82,74,71,71,69,68,66,62,35,15,4,2,1,1,1]],
-    columns=[
-        "Metric",
-        "Ciclo_1","Ciclo_2","Ciclo_3","Ciclo_4","Ciclo_5",
-        "Ciclo_6","Ciclo_7","Ciclo_8","Ciclo_9","Ciclo_10",
-        "Ciclo_11","Ciclo_12","Ciclo_13","Ciclo_14","Ciclo_15",
-        "Ciclo_16","Ciclo_17","Ciclo_18","Ciclo_19"
-    ]
-)
-
-st.dataframe(cycles_df, use_container_width=True)
-
 
 # =========================================================
-# 📋 Nº DE PACIENTES AVALIADOS POR CICLO E TOXICIDADE
+# 📊 RESUMO POR PACIENTE
 # =========================================================
-st.header("📋 Número de pacientes avaliados por ciclo e toxicidade")
-
-st.markdown("""
-<p style="text-align: justify;">
-A tabela abaixo mostra o número de pacientes avaliados em cada ciclo de tratamento
-para diferentes tipos de toxicidade. A linha <b>N_pacientes</b> indica o total de
-pacientes disponíveis em cada ciclo, enquanto <b>eventos</b> representa a ocorrência
-da toxicidade e <b>Não avaliado</b> indica ausência de avaliação no ciclo.
-</p>
-""", unsafe_allow_html=True)
-
-tox_ciclo_df = pd.DataFrame([
-    ["N_pacientes", 96,93,90,88,82,74,71,71,69,68,66,62,35,15,4,2,1,1,1],
-    ["AnemiaHBMT - eventos", 30,16,16,14,12,9,13,13,10,11,10,8,5,1,0,0,0,0,0],
-    ["AnemiaHBMT - Não avaliado", 7,7,5,5,6,0,3,1,2,2,2,2,1,0,1,0,0,0,0],
-    ["DiarreiaMT - eventos", 1,0,2,4,1,0,2,2,2,4,2,1,0,0,0,0,0,0,0],
-    ["DiarreiaMT - Não avaliado", 4,3,1,3,1,0,0,2,1,0,0,1,1,0,0,0,0,0,0],
-    ["Hepatica_BT_MT - eventos", 3,4,2,2,2,1,1,1,1,0,1,0,0,0,0,0,0,0,0],
-    ["Hepatica_BT_MT - Não avaliado", 12,14,14,12,14,12,13,16,15,13,12,13,4,3,1,1,1,1,1],
-    ["Hepatica_TGO_MT - eventos", 7,6,3,3,2,4,1,4,1,0,3,1,1,0,0,0,0,0,0],
-    ["Hepatica_TGO_MT - Não avaliado", 13,15,14,14,15,10,12,13,14,14,11,13,4,3,1,1,1,1,1],
-    ["Hepatica_TGP_MT - eventos", 10,12,6,4,6,4,6,6,5,1,4,3,4,1,0,0,0,0,0],
-    ["Hepatica_TGP_MT - Não avaliado", 12,13,15,10,13,10,14,14,15,13,11,14,4,3,1,1,1,1,1],
-], columns=cycles_df.columns)
-
-st.dataframe(tox_ciclo_df, use_container_width=True)
-
-st.markdown("""
-<p style="text-align: justify;">
-Cada gráfico representa a intensidade máxima de toxicidade observada por paciente
-em cada ciclo de tratamento. Cores mais intensas indicam maior gravidade ou maior
-frequência de eventos.
-</p>
-""", unsafe_allow_html=True)
-
-
-# =========================================================
-# 📊 DADOS DEMOGRÁFICOS
-# =========================================================
-st.header("📊 Dados demográficos")
-
-demo = pd.DataFrame({
-    "Variável": ["Gênero (Masculino)", "Gênero (Feminino)"],
-    "Metronômica (sim)": ["58 (60.4%)", "38 (39.6%)"],
-    "Metronômica (não)": ["77 (55.8%)", "61 (44.2%)"],
-    "Total": ["135 (57.7%)", "99 (42.3%)"]
-})
-
-st.dataframe(demo, use_container_width=True)
-
-
-# =========================================================
-# 📌 BASELINE
-# =========================================================
-st.header("📌 Baseline (20 primeiros registros — anonimizado)")
-st.dataframe(baseline_view, use_container_width=True)
-
-
-# =========================================================
-# 🩸 HEATMAPS DE TOXICIDADE
-# =========================================================
-st.header("🩸 Toxicidade — Heatmaps por ciclo")
-
-tox_cols = [
-    ("AnemiaHBMT", "anemiahbmt"),
-    ("PlaquetopeniaMT", "plaquetopeniamt"),
-    ("NeutropeniaMT", "neutropeniamt"),
-    ("NeutropeniaFebreMT", "neutropeniafebremt"),
-    ("NauseasMT", "nauseasmt"),
-    ("VomitosMT", "vomitosmt"),
-    ("MucositeMT", "mucositemt"),
-    ("DiarreiaMT", "diarreiamt"),
-    ("Renal_CreatinaMT", "renal_creatinamt"),
-    ("Hepatica_BT_MT", "hepatica_bt_mt"),
-    ("Hepatica_TGO_MT", "hepatica_tgo_mt"),
-    ("Hepatica_TGP_MT", "hepatica_tgp_mt"),
-]
-
-sns.set(font_scale=0.6)
-
-def grau(x):
+def to_float(x):
     try:
-        return int(str(x).split("-")[0])
-    except Exception:
+        return float(str(x).replace(",", "."))
+    except:
         return np.nan
 
-for label, col in tox_cols:
-    if col not in metro.columns:
-        continue
+for col in ["pesomt", "hemoglobinamt", "leucocitosmt"]:
+    if col in metro.columns:
+        metro[col] = metro[col].apply(to_float)
 
-    df = metro.copy()
-    df[col] = df[col].apply(grau)
+resumo_df = (
+    metro.groupby("id_paciente")
+    .agg(
+        n_ciclos=("id_paciente", "count"),
+        peso_medio=("pesomt", "mean"),
+        hb_media=("hemoglobinamt", "mean"),
+        leuco_medio=("leucocitosmt", "mean"),
+    )
+    .reset_index()
+    .sort_values("n_ciclos", ascending=False)
+)
 
-    tabela = df.pivot_table(
-        index=ciclo_col,
-        columns="id_paciente",
-        values=col,
-        aggfunc="max"
-    ).fillna(0)
-
-    fig, ax = plt.subplots(figsize=(10, 4))
-    sns.heatmap(tabela, cmap="Reds", ax=ax)
-    ax.set_title(label)
-    ax.set_xlabel("Paciente")
-    ax.set_ylabel("Ciclo")
-
-    st.pyplot(fig)
-
-    descricao = {
-        "AnemiaHBMT": "Hemoglobina baixa — queda de Hb.",
-        "PlaquetopeniaMT": "Plaquetas reduzidas.",
-        "NeutropeniaMT": "Neutrófilos reduzidos.",
-        "NeutropeniaFebreMT": "Neutropenia associada à febre.",
-        "NauseasMT": "Náuseas durante o tratamento.",
-        "VomitosMT": "Vômitos.",
-        "MucositeMT": "Inflamação da mucosa oral.",
-        "DiarreiaMT": "Diarreia.",
-        "Renal_CreatinaMT": "Alterações de creatinina.",
-        "Hepatica_BT_MT": "Bilirrubina total.",
-        "Hepatica_TGO_MT": "Alterações de TGO.",
-        "Hepatica_TGP_MT": "Alterações de TGP.",
-    }
-
-    st.caption(descricao.get(label, ""))
-    plt.close(fig)
-
+st.subheader("📊 Resumo por paciente")
+st.dataframe(resumo_df, use_container_width=True)
 
 # =========================================================
 # 📊 DISTRIBUIÇÃO DOS GRAUS
@@ -466,6 +384,66 @@ st.dataframe(pd.DataFrame([
     "Grau 2", "Grau 3", "Grau 4", "Não avaliado"
 ]), use_container_width=True)
 
+
+# =========================================================
+# 🩸 HEATMAPS DE TOXICIDADE (2 POR LINHA)
+# =========================================================
+st.header("🩸 Toxicidade — Heatmaps por ciclo")
+
+tox_cols = [
+    ("AnemiaHBMT", "anemiahbmt", "Hemoglobina baixa — queda de Hb."),
+    ("PlaquetopeniaMT", "plaquetopeniamt", "Plaquetas reduzidas."),
+    ("NeutropeniaMT", "neutropeniamt", "Neutrófilos reduzidos."),
+    ("NeutropeniaFebreMT", "neutropeniafebremt", "Neutropenia associada à febre."),
+    ("NauseasMT", "nauseasmt", "Náuseas durante o tratamento."),
+    ("VomitosMT", "vomitosmt", "Vômitos."),
+    ("MucositeMT", "mucositemt", "Inflamação da mucosa oral."),
+    ("DiarreiaMT", "diarreiamt", "Diarreia."),
+    ("Renal_CreatinaMT", "renal_creatinamt", "Alterações de creatinina."),
+    ("Hepatica_BT_MT", "hepatica_bt_mt", "Bilirrubina total."),
+    ("Hepatica_TGO_MT", "hepatica_tgo_mt", "Alterações de TGO."),
+    ("Hepatica_TGP_MT", "hepatica_tgp_mt", "Alterações de TGP."),
+]
+
+def grau(x):
+    try:
+        return int(str(x).split("-")[0])
+    except:
+        return np.nan
+
+# processar heatmaps em pares
+for i in range(0, len(tox_cols), 2):
+    cols = st.columns(2)
+
+    for j, (label, col, descricao) in enumerate(tox_cols[i:i+2]):
+        with cols[j]:
+            if col not in metro.columns:
+                st.warning(f"Coluna {label} não encontrada.")
+                continue
+
+            df = metro.copy()
+            df[col] = df[col].apply(grau)
+
+            tabela = (
+                df.pivot_table(
+                    index="ciclo",
+                    columns="id_paciente",
+                    values=col,
+                    aggfunc="max"
+                )
+                .fillna(0)
+            )
+
+            fig, ax = plt.subplots(figsize=(7, 4))
+            sns.heatmap(tabela, cmap="Reds", ax=ax, cbar=True)
+            ax.set_title(label)
+            ax.set_xlabel("Paciente")
+            ax.set_ylabel("Ciclo")
+
+            st.pyplot(fig)
+            plt.close(fig)
+
+            st.caption(descricao)
 
 # =========================================================
 # 📄 RELATÓRIO GERAL — TEXTO COMPLETO
