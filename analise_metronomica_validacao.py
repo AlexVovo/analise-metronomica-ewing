@@ -1,6 +1,6 @@
 import pandas as pd
 from pathlib import Path
-from fpdf import FPDF
+
 
 # =========================
 # 1. LEITURA DOS DADOS
