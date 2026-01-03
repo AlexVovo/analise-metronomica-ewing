@@ -1,0 +1,57 @@
+/* ---- PAGE SETTINGS ---- */
+@page {
+  size: A4;
+  margin: 2cm;
+}
+
+/* Evitar quebra dentro de blocos */
+.report-block {
+  page-break-inside: avoid;
+  break-inside: avoid;
+  margin-bottom: 25px;
+}
+
+/* Títulos devem puxar o conteúdo com eles */
+h2, h3 {
+  break-before: avoid-page;
+  page-break-after: avoid;
+  margin-top: 25px;
+  color: #0c5a32;
+  font-weight: 700;
+  font-family: "Arial", sans-serif;
+}
+
+/* Tabelas — nunca dividir entre páginas */
+table {
+  width: 100%;
+  border-collapse: collapse;
+  page-break-inside: avoid;
+  break-inside: avoid;
+}
+
+thead {
+  display: table-header-group;
+}
+
+tbody {
+  display: table-row-group;
+}
+
+th, td {
+  padding: 6px 8px;
+  border: 1px solid #ccc;
+}
+
+/* Gráficos como bloco único */
+img {
+  max-width: 100%;
+  page-break-inside: avoid;
+  break-inside: avoid;
+  display: block;
+  margin: 10px auto;
+}
+
+/* Melhor espaçamento nos parágrafos */
+p {
+  page-break-inside: avoid;
+}

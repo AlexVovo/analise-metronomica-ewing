@@ -1,0 +1,272 @@
+/* ===============================
+   RESET
+=============================== */
+html, body {
+  margin: 0;
+  padding: 0;
+}
+
+/* ===============================
+   BASE STYLE
+=============================== */
+body {
+  font-family: "Arial", sans-serif;
+  color: #333;
+
+  /* Canvas central do relatório */
+  width: 1120px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+/* ===============================
+   TEXTO JUSTIFICADO GLOBAL
+=============================== */
+p,
+li {
+  text-align: justify;
+  text-justify: inter-word;
+}
+
+/* ===============================
+   HEADER
+=============================== */
+header {
+  text-align: center;
+  padding: 18px 0;
+  background: #f4f7f5;
+  border-bottom: 4px solid #0c5a32;
+  margin-bottom: 12px;
+}
+
+header h1,
+header h3 {
+  color: #0c5a32;
+}
+
+.logo {
+  max-height: 70px;
+}
+
+/* ===============================
+   TITLES
+=============================== */
+h1 {
+  font-size: 28px;
+  font-weight: 700;
+  color: #0c5a32;
+  text-align: center;
+}
+
+h2 {
+  font-size: 20px;
+  font-weight: 700;
+  color: #0c5a32;
+  margin: 18px 0 10px;
+  text-align: left;
+}
+
+h3 {
+  font-size: 16px;
+  font-weight: 600;
+  color: #0c5a32;
+  text-align: left;
+}
+
+/* ===============================
+   METADATA
+=============================== */
+.metadata {
+  font-size: 13px;
+  color: #555;
+  background: #eef7f0;
+  text-align: center;
+  padding: 6px 0;
+}
+
+/* ===============================
+   TABLES
+=============================== */
+table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 8px;
+  font-size: 12px;
+}
+
+th, td {
+  border: 1px solid #ccc;
+  padding: 5px 8px;
+  word-break: break-word;
+}
+
+th {
+  background: #e9f3ed;
+  font-weight: bold;
+  text-align: left;
+}
+
+/* ===============================
+   LARGE TABLES
+=============================== */
+.wide-table {
+  font-size: 10px !important;
+  table-layout: fixed;
+}
+
+.wide-table th,
+.wide-table td {
+  max-width: 95px !important;
+  padding: 4px 5px;
+  font-size: 9px !important;
+}
+
+/* ===============================
+   SCROLL TABLE
+=============================== */
+.scroll-table {
+  max-width: 1120px;
+  overflow-x: auto;
+}
+
+/* ===============================
+   HEATMAP GRID
+=============================== */
+@media screen {
+  body {
+    transform: scale(0.95);
+    transform-origin: top center;
+  }
+
+  .grid {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 20px;
+    justify-content: center;
+  }
+
+  .hm-block {
+    width: 48%;
+    text-align: center;
+  }
+
+  img.heatmap {
+    width: 100%;
+    max-height: 360px;
+    object-fit: contain;
+    margin: 0 auto;
+  }
+
+  .hm-desc {
+    font-size: 12px;
+    color: #444;
+    margin-top: 6px;
+    text-align: center;
+  }
+}
+
+/* ===============================
+   FOOTER
+=============================== */
+footer {
+  text-align: center;
+  font-size: 10px;
+  margin-top: 45px;
+  color: #888;
+}
+
+/* ===============================
+   RELATÓRIO LATERAL — DIREITA (HTML)
+=============================== */
+.relatorio-texto {
+  position: fixed;
+  top: 0;
+  right: 0;
+
+  width: 420px;
+  height: 100vh;
+
+  overflow-y: auto;
+
+  background: #0f2233;
+  color: #e6eef5;
+
+  border-left: 3px solid #2e7d5b;
+  padding: 22px;
+
+  font-size: 13px;
+  line-height: 1.55;
+
+  text-align: justify;
+  text-justify: inter-word;
+
+  z-index: 9999;
+  box-shadow: -6px 0 16px rgba(0,0,0,0.35);
+}
+
+.relatorio-texto h2 {
+  font-size: 18px;
+  margin-top: 0;
+  color: #7fd6a4;
+  text-align: left;
+}
+
+.relatorio-texto h3 {
+  font-size: 14px;
+  margin-top: 16px;
+  color: #9fe0b9;
+  text-align: left;
+}
+
+.relatorio-texto p {
+  margin-bottom: 12px;
+  text-align: justify;
+  text-justify: inter-word;
+}
+
+/* ===============================
+   PRINT / PDF
+=============================== */
+@media print {
+
+  body {
+    width: 1120px;
+    margin-left: auto;
+    margin-right: auto;
+    transform: scale(0.95);
+    transform-origin: top center;
+  }
+
+  p,
+  li {
+    text-align: justify !important;
+    text-justify: inter-word !important;
+  }
+
+  table.baseline-table {
+    table-layout: fixed !important;
+    font-size: 8px !important;
+  }
+
+  table.baseline-table th {
+    white-space: nowrap !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+  }
+
+  table.baseline-table td {
+    word-break: break-word !important;
+  }
+
+  img.heatmap {
+    width: 100% !important;
+    height: auto !important;
+    page-break-inside: avoid !important;
+    margin-bottom: 25px;
+  }
+
+  /* ❌ NÃO APARECE NO PDF */
+  .relatorio-texto {
+    display: none !important;
+  }
+}

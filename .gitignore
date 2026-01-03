@@ -1,0 +1,27 @@
+# Ambiente
+.venv/
+__pycache__/
+*.pyc
+
+# Dados e resultados
+*.xlsx
+*.sav
+*.csv
+*.json
+*.pdf
+
+Resultados/
+output/
+planilha_metronomica_extracted/
+
+# Relatórios gerados
+Relatorio_Final.html
+Relatorio.html
+Untitled-2.html
+
+# Docs de fluxo
+*.docx
+*.odt
+
+# Sistema
+.DS_Store

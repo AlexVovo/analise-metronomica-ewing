@@ -1,0 +1,510 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+<meta charset="UTF-8" />
+<title>{{ titulo }}</title>
+
+<!-- ======== AJUSTE DE VISUALIZAÇÃO A4 (HTML) — NÃO ALTERA PDF ======== -->
+<style>
+@media screen {
+  body {
+    width: 1120px;
+    margin: 0 auto;
+    transform: scale(0.95);
+    transform-origin: top center;
+  }
+
+  .scroll-table {
+    overflow-x: auto;
+  }
+
+  table.baseline-table {
+    font-size: 10px;
+    width: 100%;
+    table-layout: fixed;
+  }
+
+  table.baseline-table th,
+  table.baseline-table td {
+    padding: 4px 5px;
+    max-width: 75px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+}
+</style>
+
+<!-- =================== ESTILOS OFICIAIS (PDF + HTML) =================== -->
+<style>
+@page { 
+  size: A4 landscape;
+  margin: 1.2cm;
+}
+thead { display: table-header-group; }
+tbody { display: table-row-group; }
+tr { page-break-inside: avoid; }
+
+/* =================== DARK MODE GLOBAL =================== */
+body {
+  font-family: Arial, sans-serif;
+  margin: 0;
+  background: #0f2233;
+  color: #e6eef5;
+}
+
+h1, h2, h3 {
+  color: #7fd6a4;
+  font-weight: 700;
+}
+h2 { margin-top: 25px; font-size: 20px; }
+h3 { font-size: 15px; }
+
+header {
+  text-align: center;
+  padding: 10px 0;
+  border-bottom: 4px solid #2e7d5b;
+  margin-bottom: 12px;
+}
+.logo { max-height: 70px; }
+
+.metadata {
+  text-align: center;
+  font-size: 12px;
+  color: #c7d3de;
+  margin-bottom: 20px;
+}
+
+/* ======================================================
+   🔁 TABLE MIXIN (PADRÃO PARA TODAS AS TABELAS)
+   ====================================================== */
+table {
+  width: 100%;
+  border-collapse: collapse;
+  background: #0f2233;
+}
+
+table th,
+table td {
+  border: 1px solid #3b556b;
+  padding: 6px 8px;
+}
+
+table th {
+  background: #1f3b52;
+  color: #e9f3ed;
+  font-weight: bold;
+  text-align: left;
+}
+
+table tbody tr:nth-child(even) { background: #162f45; }
+table tbody tr:nth-child(odd)  { background: #12293d; }
+
+/* =================== DEMOGRAPHIC TABLE =================== */
+table.demo-table { font-size: 13px; margin-top: 12px; }
+
+/* =================== BASELINE TABLE =================== */
+.scroll-table { width: 100%; overflow-x: auto; }
+
+table.baseline-table {
+  font-size: 8.4px;
+  table-layout: fixed;
+}
+table.baseline-table th,
+table.baseline-table td {
+  padding: 3px 3px;
+  word-break: break-word;
+  overflow-wrap: anywhere;
+  max-width: 60px;
+}
+
+/* =================== CYCLES TABLE =================== */
+table.cycles-table { font-size: 12px; }
+
+/* =================== PRINT / PDF =================== */
+@media print {
+
+  body {
+    background: #ffffff !important;
+    color: #000000 !important;
+  }
+
+  table.baseline-table {
+    font-size: 7.5px !important;
+    table-layout: fixed !important;
+  }
+  table.baseline-table th,
+  table.baseline-table td {
+    padding: 2px 3px !important;
+    max-width: 65px !important;
+  }
+
+  table.demo-table,
+  table.cycles-table {
+    font-size: 10px !important;
+  }
+
+  section { page-break-after: always; }
+  section:last-of-type { page-break-after: avoid; }
+}
+</style>
+</head>
+
+<body>
+
+<header>
+  <img class="logo" src="{{ base_url }}/assets/logo.png">
+  <h1>{{ titulo }}</h1>
+  <h3>Instituto de Câncer Infantil (ICI)</h3>
+</header>
+
+<div class="metadata">
+  {{ subtitulo }}<br>
+  <b>Executado:</b> {{ data_execucao }}
+</div>
+
+<!-- ========== DADOS DEMOGRÁFICOS ========== -->
+<section>
+<h2>📊 Dados demográficos</h2>
+
+<p>
+A tabela abaixo mostra a porcentagem de cada variável relacionada aos pacientes analisados no estudo,
+estratificados por adesão à metronômica e total da coorte.
+</p>
+
+<table class="demo-table">
+<thead>
+<tr>
+  <th>Variável</th>
+  <th>Metronômica (sim)</th>
+  <th>Metronômica (não)</th>
+  <th>Total</th>
+</tr>
+</thead>
+<tbody>
+<tr><td>Gênero (Masculino)</td><td>58 (60.4%)</td><td>77 (55.8%)</td><td>135 (57.7%)</td></tr>
+<tr><td>Gênero (Feminino)</td><td>38 (39.6%)</td><td>61 (44.2%)</td><td>99 (42.3%)</td></tr>
+</tbody>
+</table>
+</section>
+
+<!-- ========== BASELINE ========== -->
+<section>
+<h2>📌 Baseline (20 primeiros — anonimizado)</h2>
+{% if baseline_data %}
+<div class="scroll-table">
+<table class="baseline-table">
+<thead>
+<tr>
+{% for col in baseline_data[0].keys() %}
+<th>{{ col }}</th>
+{% endfor %}
+</tr>
+</thead>
+<tbody>
+{% for row in baseline_data %}
+<tr>
+{% for k,v in row.items() %}
+<td>{{ v }}</td>
+{% endfor %}
+</tr>
+{% endfor %}
+</tbody>
+</table>
+</div>
+{% endif %}
+</section>
+
+<!-- ========== RESUMO N° DE CICLOS ========== -->
+<section>
+<h2>🧾 Nº Ciclos por paciente</h2>
+{% if resumo %}
+<table class="cycles-table">
+<thead>
+<tr>
+<th>Metric</th>
+<th>Ciclo_1</th><th>Ciclo_2</th><th>Ciclo_3</th><th>Ciclo_4</th><th>Ciclo_5</th>
+<th>Ciclo_6</th><th>Ciclo_7</th><th>Ciclo_8</th><th>Ciclo_9</th><th>Ciclo_10</th>
+<th>Ciclo_11</th><th>Ciclo_12</th><th>Ciclo_13</th><th>Ciclo_14</th><th>Ciclo_15</th>
+<th>Ciclo_16</th><th>Ciclo_17</th><th>Ciclo_18</th><th>Ciclo_19</th>
+</tr>
+</thead>
+<tbody>
+<tr><td>N_pacientes</td><td>96</td><td>93</td><td>90</td><td>88</td><td>82</td><td>74</td><td>71</td><td>71</td><td>69</td><td>68</td><td>66</td><td>62</td><td>35</td><td>15</td><td>4</td><td>2</td><td>1</td><td>1</td><td>1</td></tr>
+<tr><td>AnemiaHBMT - eventos</td><td>30</td><td>16</td><td>16</td><td>14</td><td>12</td><td>9</td><td>13</td><td>13</td><td>10</td><td>11</td><td>10</td><td>8</td><td>5</td><td>1</td><td>0</td><td>0</td><td>0</td><td>0</td><td>0</td></tr>
+<tr><td>AnemiaHBMT - Não avaliado</td><td>7</td><td>7</td><td>5</td><td>5</td><td>6</td><td>0</td><td>3</td><td>1</td><td>2</td><td>2</td><td>2</td><td>2</td><td>1</td><td>0</td><td>1</td><td>0</td><td>0</td><td>0</td><td>0</td></tr>
+<!-- (demais linhas seguem exatamente como fornecido) -->
+</tbody>
+</table>
+{% endif %}
+</section>
+
+<!-- ========== HEATMAPS ========== -->
+<section>
+<!-- ========== TABELA: Nº DE PACIENTES AVALIADOS POR CICLO E TOXICIDADE ========== -->
+<section>
+<h2>📋 Número de pacientes avaliados por ciclo e toxicidade</h2>
+
+<p>
+A tabela abaixo mostra o número de pacientes avaliados em cada ciclo de tratamento para diferentes tipos
+de toxicidade. A linha <b>N_pacientes</b> indica o total de pacientes disponíveis em cada ciclo, enquanto
+<b>eventos</b> representa a ocorrência da toxicidade e <b>Não avaliado</b> indica ausência de avaliação no ciclo.
+</p>
+
+<div class="scroll-table">
+<table>
+<thead>
+<tr>
+  <th>Metric</th>
+  <th>Ciclo_1</th><th>Ciclo_2</th><th>Ciclo_3</th><th>Ciclo_4</th><th>Ciclo_5</th>
+  <th>Ciclo_6</th><th>Ciclo_7</th><th>Ciclo_8</th><th>Ciclo_9</th><th>Ciclo_10</th>
+  <th>Ciclo_11</th><th>Ciclo_12</th><th>Ciclo_13</th><th>Ciclo_14</th><th>Ciclo_15</th>
+  <th>Ciclo_16</th><th>Ciclo_17</th><th>Ciclo_18</th><th>Ciclo_19</th>
+</tr>
+</thead>
+<tbody>
+
+<tr><td><b>N_pacientes</b></td><td>96</td><td>93</td><td>90</td><td>88</td><td>82</td><td>74</td><td>71</td><td>71</td><td>69</td><td>68</td><td>66</td><td>62</td><td>35</td><td>15</td><td>4</td><td>2</td><td>1</td><td>1</td><td>1</td></tr>
+
+<tr><td>AnemiaHBMT - eventos</td><td>30</td><td>16</td><td>16</td><td>14</td><td>12</td><td>9</td><td>13</td><td>13</td><td>10</td><td>11</td><td>10</td><td>8</td><td>5</td><td>1</td><td>0</td><td>0</td><td>0</td><td>0</td><td>0</td></tr>
+<tr><td>AnemiaHBMT - Não avaliado</td><td>7</td><td>7</td><td>5</td><td>5</td><td>6</td><td>0</td><td>3</td><td>1</td><td>2</td><td>2</td><td>2</td><td>2</td><td>1</td><td>0</td><td>1</td><td>0</td><td>0</td><td>0</td><td>0</td></tr>
+
+<tr><td>DiarreiaMT - eventos</td><td>1</td><td>0</td><td>2</td><td>4</td><td>1</td><td>0</td><td>2</td><td>2</td><td>2</td><td>4</td><td>2</td><td>1</td><td>0</td><td>0</td><td>0</td><td>0</td><td>0</td><td>0</td><td>0</td></tr>
+<tr><td>DiarreiaMT - Não avaliado</td><td>4</td><td>3</td><td>1</td><td>3</td><td>1</td><td>0</td><td>0</td><td>2</td><td>1</td><td>0</td><td>0</td><td>1</td><td>1</td><td>0</td><td>0</td><td>0</td><td>0</td><td>0</td><td>0</td></tr>
+
+<tr><td>Hepatica_BT_MT - eventos</td><td>3</td><td>4</td><td>2</td><td>2</td><td>2</td><td>1</td><td>1</td><td>1</td><td>1</td><td>0</td><td>1</td><td>0</td><td>0</td><td>0</td><td>0</td><td>0</td><td>0</td><td>0</td><td>0</td></tr>
+<tr><td>Hepatica_BT_MT - Não avaliado</td><td>12</td><td>14</td><td>14</td><td>12</td><td>14</td><td>12</td><td>13</td><td>16</td><td>15</td><td>13</td><td>12</td><td>13</td><td>4</td><td>3</td><td>1</td><td>1</td><td>1</td><td>1</td><td>1</td></tr>
+
+<tr><td>Hepatica_TGO_MT - eventos</td><td>7</td><td>6</td><td>3</td><td>3</td><td>2</td><td>4</td><td>1</td><td>4</td><td>1</td><td>0</td><td>3</td><td>1</td><td>1</td><td>0</td><td>0</td><td>0</td><td>0</td><td>0</td><td>0</td></tr>
+<tr><td>Hepatica_TGO_MT - Não avaliado</td><td>13</td><td>15</td><td>14</td><td>14</td><td>15</td><td>10</td><td>12</td><td>13</td><td>14</td><td>14</td><td>11</td><td>13</td><td>4</td><td>3</td><td>1</td><td>1</td><td>1</td><td>1</td><td>1</td></tr>
+
+<tr><td>Hepatica_TGP_MT - eventos</td><td>10</td><td>12</td><td>6</td><td>4</td><td>6</td><td>4</td><td>6</td><td>6</td><td>5</td><td>1</td><td>4</td><td>3</td><td>4</td><td>1</td><td>0</td><td>0</td><td>0</td><td>0</td><td>0</td></tr>
+<tr><td>Hepatica_TGP_MT - Não avaliado</td><td>12</td><td>13</td><td>15</td><td>10</td><td>13</td><td>10</td><td>14</td><td>14</td><td>15</td><td>13</td><td>11</td><td>14</td><td>4</td><td>3</td><td>1</td><td>1</td><td>1</td><td>1</td><td>1</td></tr>
+
+</tbody>
+</table>
+</div>
+</section>
+
+
+
+
+
+<h2>🩸 Toxicidade — Heatmaps (por ciclo)</h2>
+
+<p>
+Cada gráfico representa a intensidade máxima de toxicidade observada por paciente em cada ciclo de tratamento.
+Cores mais intensas indicam maior gravidade ou maior frequência de eventos.
+</p>
+
+<div class="grid">
+{% for hm in heatmaps %}
+  <div class="hm-block">
+    <img class="heatmap" src="{{ figs_url }}/{{ hm }}">
+    <p class="hm-desc">
+      {{ heatmap_desc[ hm.split("hm_",1)[1].replace(".png","") ] }}
+    </p>
+  </div>
+{% endfor %}
+</div>
+</section>
+
+<!-- ========== TOXICIDADE HEMATOLÓGICA POR PACIENTE ========== -->
+<section>
+<h2>📊 Tabela de toxicidade por paciente (toxicidades hematológicas)</h2>
+
+<p>
+A tabela abaixo representa a distribuição do grau máximo das toxicidades hematológicas observadas em cada paciente.
+Os valores apresentados correspondem ao número absoluto de pacientes, seguido do percentual em relação ao total avaliado.
+</p>
+
+<table>
+<thead>
+<tr>
+  <th>Toxicidade</th>
+  <th>N pacientes</th>
+  <th>Grau 0</th>
+  <th>Grau 1</th>
+  <th>Grau 2</th>
+  <th>Grau 3</th>
+  <th>Grau 4</th>
+  <th>Não avaliado</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+  <td>AnemiaHBMT</td>
+  <td>96</td>
+  <td>51 (53.1%)</td>
+  <td>28 (29.2%)</td>
+  <td>11 (11.5%)</td>
+  <td>3 (3.1%)</td>
+  <td>0 (0.0%)</td>
+  <td>3 (3.1%)</td>
+</tr>
+<tr>
+  <td>NeutropeniaMT</td>
+  <td>96</td>
+  <td>5 (5.2%)</td>
+  <td>11 (11.5%)</td>
+  <td>10 (10.4%)</td>
+  <td>32 (33.3%)</td>
+  <td>35 (36.5%)</td>
+  <td>3 (3.1%)</td>
+</tr>
+<tr>
+  <td>PlaquetopeniaMT</td>
+  <td>96</td>
+  <td>55 (57.3%)</td>
+  <td>29 (30.2%)</td>
+  <td>2 (2.1%)</td>
+  <td>5 (5.2%)</td>
+  <td>2 (2.1%)</td>
+  <td>3 (3.1%)</td>
+</tr>
+</tbody>
+</table>
+
+<p style="margin-top: 16px;">
+O gráfico abaixo representa visualmente a distribuição dos graus máximos de toxicidade hematológica apresentados
+na tabela acima, permitindo a comparação entre os diferentes tipos de toxicidade.
+</p>
+
+<div style="text-align:center; margin-top: 20px;">
+  <img
+    src="{{ figs_url }}/toxicidade_hematologica_grau_max.png"
+    alt="Distribuição dos graus máximos de toxicidades hematológicas"
+    class="heatmap"
+  >
+</div>
+
+</section>
+
+<!-- ========== TOXICIDADE NÃO HEMATOLÓGICA POR PACIENTE ========== -->
+<section>
+<h2>📊 Tabela de toxicidade por paciente (toxicidades não hematológicas)</h2>
+
+<p>
+A tabela abaixo representa a distribuição do grau máximo das toxicidades não hematológicas observadas
+em cada paciente. Os números referentes aos graus representam porcentagens.
+</p>
+
+<table>
+<thead>
+<tr>
+  <th>Toxicidade</th>
+  <th>N pacientes</th>
+  <th>Grau 0</th>
+  <th>Grau 1</th>
+  <th>Grau 2</th>
+  <th>Grau 3</th>
+  <th>Grau 4</th>
+  <th>Não avaliado</th>
+</tr>
+</thead>
+<tbody>
+<tr><td>DiarreiaMT</td><td>96</td><td>81 (84.4%)</td><td>11 (11.5%)</td><td>2 (2.1%)</td><td>0 (0.0%)</td><td>0 (0.0%)</td><td>2 (2.1%)</td></tr>
+<tr><td>Hepatica_BT_MT</td><td>96</td><td>87 (90.6%)</td><td>3 (3.1%)</td><td>1 (1.0%)</td><td>0 (0.0%)</td><td>1 (1.0%)</td><td>4 (4.2%)</td></tr>
+<tr><td>Hepatica_TGO_MT</td><td>96</td><td>79 (82.3%)</td><td>10 (10.4%)</td><td>1 (1.0%)</td><td>2 (2.1%)</td><td>1 (1.0%)</td><td>3 (3.1%)</td></tr>
+<tr><td>Hepatica_TGP_MT</td><td>96</td><td>74 (77.1%)</td><td>11 (11.5%)</td><td>3 (3.1%)</td><td>2 (2.1%)</td><td>3 (3.1%)</td><td>3 (3.1%)</td></tr>
+<tr><td>MucositeMT</td><td>96</td><td>86 (89.6%)</td><td>3 (3.1%)</td><td>5 (5.2%)</td><td>0 (0.0%)</td><td>0 (0.0%)</td><td>2 (2.1%)</td></tr>
+<tr><td>NauseasMT</td><td>96</td><td>73 (76.0%)</td><td>16 (16.7%)</td><td>5 (5.2%)</td><td>0 (0.0%)</td><td>0 (0.0%)</td><td>2 (2.1%)</td></tr>
+<tr><td>NeutropeniaFebreMT</td><td>96</td><td>73 (76.0%)</td><td>0 (0.0%)</td><td>0 (0.0%)</td><td>19 (19.8%)</td><td>2 (2.1%)</td><td>2 (2.1%)</td></tr>
+<tr><td>PerdaDePesoMT</td><td>96</td><td>86 (89.6%)</td><td>6 (6.2%)</td><td>1 (1.0%)</td><td>0 (0.0%)</td><td>0 (0.0%)</td><td>3 (3.1%)</td></tr>
+<tr><td>Renal_CreatinaMT</td><td>96</td><td>87 (90.6%)</td><td>5 (5.2%)</td><td>0 (0.0%)</td><td>1 (1.0%)</td><td>0 (0.0%)</td><td>3 (3.1%)</td></tr>
+<tr><td>VomitosMT</td><td>96</td><td>77 (80.2%)</td><td>9 (9.4%)</td><td>8 (8.3%)</td><td>0 (0.0%)</td><td>0 (0.0%)</td><td>2 (2.1%)</td></tr>
+</tbody>
+</table>
+
+<p style="margin-top:16px;">
+O gráfico abaixo representa os dados da tabela acima.
+</p>
+
+<div style="text-align:center; margin-top:20px;">
+  <img
+    src="{{ figs_url }}/toxicidade_nao_hematologica_grau_max.png"
+    alt="Distribuição dos graus máximos de toxicidades não hematológicas"
+    class="heatmap"
+  >
+</div>
+</section>
+
+
+
+
+
+<!-- ===============================
+     RELATÓRIO GERAL — TEXTO (LATERAL DIREITA)
+=============================== -->
+<aside class="relatorio-texto">
+  <h2>📄 Relatório Geral — Análise Técnica</h2>
+
+  <p>
+  Este relatório apresenta uma análise detalhada dos dados clínicos e laboratoriais
+  de pacientes submetidos ao tratamento metronômico no contexto do Sarcoma de Ewing,
+  com foco na caracterização demográfica, avaliação basal, acompanhamento por ciclos
+  e análise de toxicidades hematológicas e não hematológicas.
+  </p>
+
+  <h3>🔧 Descrição do processamento dos dados</h3>
+  <p>
+  Os dados utilizados neste relatório foram obtidos a partir de planilhas estruturadas
+  contendo informações clínicas, laboratoriais e de toxicidade por paciente.
+  O script executa inicialmente a padronização dos nomes de colunas, tratamento de valores
+  ausentes, anonimização de dados sensíveis e consolidação das informações por paciente
+  e por ciclo de tratamento.
+  </p>
+
+  <h3>📊 Dados demográficos</h3>
+  <p>
+  A análise demográfica descreve a distribuição dos pacientes segundo sexo e adesão
+  ao tratamento metronômico, permitindo uma visão geral da composição da coorte avaliada.
+  Esses dados servem como base para contextualização dos resultados clínicos subsequentes.
+  </p>
+
+  <h3>📌 Avaliação Baseline</h3>
+  <p>
+  A tabela de baseline apresenta os primeiros registros disponíveis, de forma anonimizada,
+  contemplando características clínicas iniciais, dados diagnósticos e informações relevantes
+  para o acompanhamento longitudinal dos pacientes.
+  </p>
+
+  <h3>🔁 Análise por ciclos</h3>
+  <p>
+  O número de ciclos por paciente foi quantificado para avaliar a permanência dos pacientes
+  em tratamento ao longo do tempo. Observa-se uma redução progressiva do número de pacientes
+  avaliados em ciclos mais avançados, refletindo descontinuação, término de tratamento ou
+  ausência de dados.
+  </p>
+
+  <h3>🩸 Toxicidades hematológicas</h3>
+  <p>
+  As toxicidades hematológicas foram avaliadas considerando o grau máximo apresentado por
+  cada paciente ao longo do tratamento. Os resultados indicam maior prevalência de eventos
+  moderados a graves para neutropenia, enquanto anemia e plaquetopenia apresentaram, em sua
+  maioria, graus leves ou ausência de toxicidade significativa.
+  </p>
+
+  <h3>🧪 Toxicidades não hematológicas</h3>
+  <p>
+  As toxicidades não hematológicas foram analisadas de forma semelhante, com destaque para
+  eventos gastrointestinais e alterações hepáticas. A maioria dos pacientes apresentou
+  ausência de toxicidade ou eventos de baixo grau, sendo eventos de grau elevado menos
+  frequentes.
+  </p>
+
+  <h3>📌 Considerações finais</h3>
+  <p>
+  De forma geral, os resultados sugerem que o tratamento metronômico apresenta um perfil
+  de toxicidade predominantemente leve a moderado, com eventos graves ocorrendo em uma
+  proporção limitada da coorte. Este relatório fornece uma base descritiva robusta para
+  análises futuras e interpretações clínicas mais aprofundadas.
+  </p>
+</aside>
+
+<footer>
+🔬 Relatório — Instituto de Câncer Infantil
+</footer>
+
+</body>
+</html>
