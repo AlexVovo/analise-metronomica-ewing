@@ -9,13 +9,20 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 import streamlit as st
 
+# =========================================================
+# 📁 PATHS — ROBUSTO PARA DEPLOY
+# =========================================================
+PROJECT_ROOT = os.getcwd()
+
+METRO_FILE = os.path.join(PROJECT_ROOT, "planilha-metronomica-filtrada.xlsx")
+BASELINE_FILE = os.path.join(PROJECT_ROOT, "1_202407_Baseline.xlsx")
 
 # =========================================================
 # 📁 PATHS
 # =========================================================
-BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-METRO_FILE = os.path.join(BASE_DIR, "planilha-metronomica-filtrada.xlsx")
-BASELINE_FILE = os.path.join(BASE_DIR, "1_202407_Baseline.xlsx")
+# BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+# METRO_FILE = os.path.join(BASE_DIR, "planilha-metronomica-filtrada.xlsx")
+# BASELINE_FILE = os.path.join(BASE_DIR, "1_202407_Baseline.xlsx")
 
 
 # =========================================================
@@ -136,21 +143,88 @@ h1, h2, h3, h4 {
 # =========================================================
 @st.cache_data
 def load_data():
-    metro = pd.read_excel(METRO_FILE) if os.path.exists(METRO_FILE) else pd.DataFrame()
-    baseline = pd.read_excel(BASELINE_FILE) if os.path.exists(BASELINE_FILE) else pd.DataFrame()
+    metro = pd.read_excel(METRO_FILE)
+    baseline = pd.read_excel(BASELINE_FILE)
     return metro, baseline
 
 metro, baseline = load_data()
 
+
+# =========================================================
+# 🧹 PADRONIZAÇÃO DAS COLUNAS
+# =========================================================
+metro.columns = (
+    metro.columns.str.lower()
+    .str.strip()
+    .str.normalize("NFKD")
+    .str.encode("ascii", errors="ignore")
+    .str.decode("utf-8")
+    .str.replace(" ", "_")
+)
+
+baseline.columns = (
+    baseline.columns.str.lower()
+    .str.strip()
+)
+
+# Garantir id_paciente
+if "id_paciente" not in metro.columns:
+    for c in metro.columns:
+        if c.startswith("id"):
+            metro.rename(columns={c: "id_paciente"}, inplace=True)
+            break
+
+# Garantir ciclo
+metro = metro.sort_values("id_paciente")
+metro["ciclo"] = metro.groupby("id_paciente").cumcount() + 1
+
+# =========================================================
+# 📂 LEITURA DOS DADOS
+# =========================================================
+# @st.cache_data
+# def load_data():
+  #  metro = pd.read_excel(METRO_FILE) if os.path.exists(METRO_FILE) else pd.DataFrame()
+   # baseline = pd.read_excel(BASELINE_FILE) if os.path.exists(BASELINE_FILE) else pd.DataFrame()
+    #return metro, baseline
+
+#metro, baseline = load_data()
+
+# =========================================================
+# 🚨 VERIFICAÇÃO DE ARQUIVOS (DEPLOY SAFE)
+# =========================================================
+PROJECT_ROOT = os.getcwd()
+
+METRO_FILE = os.path.join(PROJECT_ROOT, "planilha-metronomica-filtrada.xlsx")
+BASELINE_FILE = os.path.join(PROJECT_ROOT, "1_202407_Baseline.xlsx")
+
+if not os.path.exists(METRO_FILE):
+    st.error(
+        "❌ Arquivo planilha-metronomica-filtrada.xlsx não encontrado.\n\n"
+        f"📂 Diretório atual: {PROJECT_ROOT}\n\n"
+        f"📄 Arquivos disponíveis:\n{os.listdir(PROJECT_ROOT)}"
+    )
+    st.stop()
+
+if not os.path.exists(BASELINE_FILE):
+    st.error(
+        "❌ Arquivo 1_202407_Baseline.xlsx não encontrado.\n\n"
+        f"📂 Diretório atual: {PROJECT_ROOT}\n\n"
+        f"📄 Arquivos disponíveis:\n{os.listdir(PROJECT_ROOT)}"
+    )
+    st.stop()
+
+    
+
+
 # =========================================================
 # 🚨 VERIFICAÇÃO
 # =========================================================
-if metro.empty:
-    st.error(
-        "❌ Arquivo planilha-metronomica-filtrada.xlsx não encontrado ou vazio.\n\n"
-        f"Esperado em: {BASE_DIR}"
-    )
-    st.stop()
+# if metro.empty:
+  #  st.error(
+   #     "❌ Arquivo planilha-metronomica-filtrada.xlsx não encontrado ou vazio.\n\n"
+    #    f"Esperado em: {BASE_DIR}"
+    # )
+    # st.stop()
 
 
 # =========================================================
