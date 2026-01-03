@@ -7,7 +7,7 @@ from fpdf import FPDF
 # =========================
 # heme = pd.read_csv(BASE_DIR / "toxicidades_hematologicas_n_perc.csv")
 # heme = pd.read_csv("toxicidades_hematologicas_n_perc.csv")
-outras = pd.read_csv("outras_toxicidades_n_perc.csv")
+# outras = pd.read_csv("outras_toxicidades_n_perc.csv")
 
 # =========================
 # 2. PADRONIZAÇÃO
