@@ -144,10 +144,11 @@ figure, svg {
 # 📁 PATHS
 # =========================================================
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-BIOINFO_DIR = os.path.abspath(os.path.join(BASE_DIR, ".."))
 
-metro_file = os.path.join(BIOINFO_DIR, "planilha-metronomica-filtrada.xlsx")
-baseline_file = os.path.join(BIOINFO_DIR, "1_202407_Baseline.xlsx")
+metro_file = os.path.join(BASE_DIR, "planilha-metronomica-filtrada.xlsx")
+baseline_file = os.path.join(BASE_DIR, "1_202407_Baseline.xlsx")
+
+
 
 
 # =========================================================
