@@ -6,434 +6,263 @@ import numpy as np
 import matplotlib.pyplot as plt
 import streamlit as st
 from pathlib import Path
-from io import BytesIO
 
 # =========================================================
-# CONFIG STREAMLIT
+# CONFIG
 # =========================================================
-st.set_page_config(
-    page_title="Relatório Técnico – Metronômica no Ewing",
-    layout="wide"
-)
+st.set_page_config(layout="wide")
 
-st.title("Relatório Técnico – Toxicidade Metronômica no Sarcoma de Ewing")
+st.title("Relatório da análise de dados demográficos e toxicidade")
 
 # =========================================================
-# ESTILO VISUAL
+# DADOS DEMOGRÁFICOS
 # =========================================================
+
+st.header("Dados demográficos")
+
 st.markdown("""
-<style>
+A tabela abaixo mostra a porcentagem de cada variável relaciada aos pacientes analisados no estudo.  
+Cada porcentagem foi calculada baseada no número de pacientes (n) que aderiram a metronômica (n=96), não aderiram (n=138).  
+Também foi calculado para toda a coorte (n=234).
+""")
 
-h1 {font-size:40px;font-weight:700;}
-h2 {font-size:30px;margin-top:35px;}
+data_demo = {
 
-.styled-table {
-border-collapse: collapse;
-margin-top: 20px;
-font-size: 16px;
-width: 100%;
-}
-
-.styled-table thead tr {
-background-color: #1f4e79;
-color: white;
-text-align: center;
-}
-
-.styled-table th,
-.styled-table td {
-padding: 10px;
-border: 1px solid #ddd;
-text-align: center;
-}
-
-.styled-table tbody tr:nth-child(even) {
-background-color: #f2f2f2;
-}
-
-</style>
-""", unsafe_allow_html=True)
-
-# =========================================================
-# LOCALIZAÇÃO DOS ARQUIVOS
-# =========================================================
-ROOT = Path(__file__).parent
-
-def find_file(name):
-    files = list(ROOT.rglob(name))
-    if not files:
-        st.error(f"Arquivo '{name}' não encontrado")
-        st.stop()
-    return files[0]
-
-METRO_FILE = find_file("9_202407_Metronomica.xlsx")
-BASELINE_FILE = find_file("1_202407_Baseline.xlsx")
-DEMOG_FILE = find_file("Tabela-ewing_estatistico-22-ago-25.xlsx")
-
-st.write("Arquivos encontrados:")
-st.write(METRO_FILE)
-st.write(BASELINE_FILE)
-st.write(DEMOG_FILE)
-
-# =========================================================
-# LEITURA DOS DADOS
-# =========================================================
-@st.cache_data
-def load():
-    metro = pd.read_excel(METRO_FILE)
-    baseline = pd.read_excel(BASELINE_FILE)
-    demo = pd.read_excel(DEMOG_FILE)
-    return metro, baseline, demo
-
-metro, baseline, demo = load()
-
-# =========================================================
-# NORMALIZAR COLUNAS
-# =========================================================
-def normalizar_colunas(df):
-    df.columns = (
-        df.columns
-        .str.lower()
-        .str.strip()
-        .str.replace(" ", "_")
-        .str.normalize("NFKD")
-        .str.encode("ascii", errors="ignore")
-        .str.decode("utf-8")
-    )
-    return df
-
-metro = normalizar_colunas(metro)
-baseline = normalizar_colunas(baseline)
-demo = normalizar_colunas(demo)
-
-# =========================================================
-# DETECTAR ID PACIENTE
-# =========================================================
-def detectar_coluna_id(df):
-
-    candidatos = [
-        "id_paciente",
-        "id",
-        "idpaciente",
-        "id_pac",
-        "paciente_id"
-    ]
-
-    for c in candidatos:
-        if c in df.columns:
-            return c
-
-    return None
-
-col_id_demo = detectar_coluna_id(demo)
-col_id_metro = detectar_coluna_id(metro)
-
-if col_id_demo is None or col_id_metro is None:
-    st.error("Não foi possível identificar a coluna de ID.")
-    st.stop()
-
-ids_validos = demo[col_id_demo].unique()
-metro = metro[metro[col_id_metro].isin(ids_validos)]
-
-# =========================================================
-# CRIAR CICLOS
-# =========================================================
-
-metro = metro.sort_values([col_id_metro, "data_1_dia_mt"])
-
-metro["ciclo"] = (
-    metro.groupby(col_id_metro)
-    .cumcount() + 1
-)
-
-metro = metro[metro["ciclo"] <= 12]
-
-# 🔴 remover duplicações paciente-ciclo
-metro = metro.drop_duplicates(subset=[col_id_metro, "ciclo"])
-
-# =========================================================
-# PACIENTES POR CICLO
-# =========================================================
-pacientes_por_ciclo = (
-    metro.groupby("ciclo")[col_id_metro]
-    .nunique()
-)
-
-st.subheader("Pacientes avaliados por ciclo")
-st.table(pacientes_por_ciclo)
-
-# =========================================================
-# DETECTAR COLUNAS DE DATA
-# =========================================================
-def detectar_coluna(df, candidatos):
-    for c in candidatos:
-        if c in df.columns:
-            return c
-    return None
-
-col_data_tcle = detectar_coluna(
-    baseline,
-    ["data_tcle","tcle_data","data_tcle_assinatura"]
-)
-
-col_data_nasc = detectar_coluna(
-    baseline,
-    ["data_nascimento","data_de_nascimento","nascimento","dt_nascimento"]
-)
-
-if col_data_tcle is None or col_data_nasc is None:
-    st.error("Colunas de data não encontradas")
-    st.stop()
-
-# =========================================================
-# CALCULAR IDADE
-# =========================================================
-baseline[col_data_tcle] = pd.to_datetime(baseline[col_data_tcle], errors="coerce")
-baseline[col_data_nasc] = pd.to_datetime(baseline[col_data_nasc], errors="coerce")
-
-baseline["idade"] = (
-    baseline[col_data_tcle] -
-    baseline[col_data_nasc]
-).dt.days / 365.25
-
-idade = baseline["idade"].dropna()
-
-st.header("Tabela 1 – Dados demográficos")
-
-st.write("Range:",round(idade.min(),1),"-",round(idade.max(),1))
-st.write("Média:",round(idade.mean(),1))
-st.write("Mediana:",round(idade.median(),1))
-
-# =========================================================
-# TABELA DEMOGRÁFICA
-# =========================================================
-tabela_demo = pd.DataFrame({
 "Variável":[
-"Idade média",
-"Idade mediana",
-"Idade mínima",
-"Idade máxima"
+"Gênero (Masculino)",
+"Gênero (Feminino)",
+"Local (Pélvico)",
+"Local (Não pélvico)",
+"Tamanho do tumor (> 8 cm)",
+"Tamanho do tumor (≤ 8 cm)",
+"Idade (≥14 anos)",
+"Idade (<14 anos)",
+"Range",
+"Média",
+"Mediana"
 ],
-"Valor":[
-round(idade.mean(),2),
-round(idade.median(),2),
-round(idade.min(),2),
-round(idade.max(),2)
+
+"Metronômica (sim) - n=96":[
+"58 (60.42%)",
+"38 (39.58%)",
+"19 (19.79%)",
+"77 (80.21%)",
+"46 (47.92%)",
+"50 (52.08%)",
+"26 (27.08%)",
+"70 (72.92%)",
+"1.06 - 26.75",
+"11.17",
+"11.56"
+],
+
+"Metronômica (não) - n=138":[
+"77 (55.8%)",
+"61 (44.2%)",
+"23 (16.67%)",
+"115 (83.33%)",
+"71 (51.45%)",
+"67 (48.55%)",
+"42 (30.43%)",
+"96 (69.57%)",
+"0.16 - 19.06",
+"10.6",
+"10.85"
+],
+
+"Total - n=234":[
+"135 (57.69%)",
+"99 (42.31%)",
+"42 (17.95%)",
+"192 (82.05%)",
+"117 (50%)",
+"117 (50%)",
+"68 (29.06%)",
+"166 (70.94%)",
+"0.16 - 26.75",
+"10.83",
+"11.17"
 ]
-})
 
-st.table(tabela_demo)
-
-# =========================================================
-# FUNÇÃO EXTRAI GRAU
-# =========================================================
-def extrair_grau(x):
-
-    if pd.isna(x):
-        return np.nan
-
-    try:
-        return int(str(x).split("-")[0])
-
-    except:
-        return np.nan
-
-# =========================================================
-# TOXICIDADES HEMATOLÓGICAS
-# =========================================================
-tox_hema = {
-"Anemia":"anemiahbmt",
-"Thrombocytopenia":"plaquetopeniamt",
-"Neutropenia":"neutropeniamt"
 }
 
-for t in tox_hema.values():
-    if t in metro.columns:
-        metro[t+"_grau"] = metro[t].apply(extrair_grau)
+df_demo = pd.DataFrame(data_demo)
+
+st.subheader("Distribuição dos pacientes por características")
+st.table(df_demo)
 
 # =========================================================
-# CALCULAR EVENTOS
+# TEXTO TOXICIDADE
 # =========================================================
-resultados=[]
 
-for ciclo in range(1,13):
+st.header("Toxicidade por ciclo")
 
-    df_ciclo = metro[metro["ciclo"]==ciclo]
-
-    for nome,col in tox_hema.items():
-
-        if col+"_grau" not in df_ciclo.columns:
-            continue
-
-        grau = df_ciclo[col+"_grau"]
-
-        eventos=(grau>=3).sum()
-        avaliados=len(df_ciclo)
-
-        pct = eventos/avaliados*100 if avaliados>0 else np.nan
-
-        resultados.append({
-            "ciclo":ciclo,
-            "toxicidade":nome,
-            "eventos":eventos,
-            "avaliados":avaliados,
-            "percentual":pct
-        })
-
-tabela2=pd.DataFrame(resultados)
-
-st.header("Tabela 2 – Eventos ≥ grau 3 por ciclo")
-st.table(tabela2)
+st.markdown("""
+Os gráficos abaixo avaliam a toxicidade de pacientes por ciclo.  
+Foram considerados pacientes com **grau ≥ 3** para o cálculo da porcentagem de eventos por ciclo para cada toxicidade.
+""")
 
 # =========================================================
-# MATRIZ POR CICLO
+# DADOS PARA GRÁFICOS
 # =========================================================
-tabela_matriz = tabela2.pivot_table(
-index="toxicidade",
-columns="ciclo",
-values="percentual"
-).round(2)
 
-st.subheader("Matriz de eventos")
-st.table(tabela_matriz)
+ciclos = list(range(1,13))
 
-# =========================================================
-# EXPORTAR TABELAS
-# =========================================================
-buffer=BytesIO()
+n_pacientes = [96,93,90,88,82,74,71,71,69,68,66,62]
 
-with pd.ExcelWriter(buffer,engine="xlsxwriter") as writer:
-    tabela2.to_excel(writer,sheet_name="Eventos")
-    tabela_matriz.to_excel(writer,sheet_name="Matriz")
+# Hematológicos
+anemia = [6.74,5.81,4.71,7.23,6.58,4.05,1.47,2.86,4.48,6.06,3.12,5.00]
+neutropenia = [44.94,35.63,32.94,28.40,26.32,21.92,31.34,24.29,17.65,15.15,17.19,16.67]
+plaquetopenia = [4.44,1.18,0,0,1.32,0,3.03,1.45,1.52,0,1.59,3.33]
 
-st.download_button(
-"Baixar tabelas em Excel",
-buffer.getvalue(),
-file_name="resultados_metronomica.xlsx"
-)
+# Não hematológicos
+febril = [6.45,5.56,6.74,4.71,1.23,1.35,1.41,1.45,1.47,4.41,0,0]
+tgo = [1.20,2.56,1.32,1.35,1.49,1.56,1.69,3.45,1.82,0,1.82,0]
+tgp = [3.57,2.50,1.33,1.28,2.90,1.56,1.75,1.75,1.85,0,1.82,0]
+
+labels = [f"{c} ({n})" for c,n in zip(ciclos,n_pacientes)]
 
 # =========================================================
 # GRÁFICO HEMATOLÓGICO
 # =========================================================
-st.header("Gráfico – Toxicidades hematológicas")
 
-fig,ax=plt.subplots(figsize=(12,6))
+st.subheader("Hematological toxicities across treatment cycles")
 
-for tox in tox_hema.keys():
+fig, ax = plt.subplots(figsize=(10,5))
 
-    df=tabela2[tabela2["toxicidade"]==tox]
+ax.plot(ciclos, anemia, marker="o", label="Anemia")
+ax.plot(ciclos, neutropenia, marker="o", label="Neutropenia")
+ax.plot(ciclos, plaquetopenia, marker="o", label="Thrombocytopenia")
 
-    ax.plot(
-    df["ciclo"],
-    df["percentual"],
-    marker="o",
-    linewidth=3,
-    markersize=8,
-    label=tox
-    )
-
-labels=[f"{c} ({pacientes_por_ciclo.get(c,0)})" for c in range(1,13)]
-
-ax.set_xticks(range(1,13))
-ax.set_xticklabels(labels,rotation=45)
-
-ax.set_xlabel("Cycle")
-ax.set_ylabel("% of patients with grade ≥3")
-
-ax.grid(True,linestyle="--",alpha=0.4)
-
-ax.legend()
-
-st.pyplot(fig)
-
-# =========================================================
-# EXPORTAR FIGURA 300 DPI
-# =========================================================
-buf=BytesIO()
-fig.savefig(buf,dpi=300,bbox_inches="tight")
-
-st.download_button(
-"Baixar gráfico (300dpi)",
-buf.getvalue(),
-file_name="grafico_toxicidade.png"
-)
-
-st.write("Colunas disponíveis no arquivo:")
-st.write(metro.columns)
-# =========================================================
-# TOXICIDADES NÃO HEMATOLÓGICAS
-# =========================================================
-
-tox_nao = {
-    "Febrile Neutropenia": "neutropeniafebremt",
-    "Hepatica tgo": "hepatica_tgo_mt",
-    "Hepatica tgp": "hepatica_tgp_mt"
-}
-
-for t in tox_nao.values():
-    if t in metro.columns:
-        metro[t + "_grau"] = metro[t].apply(extrair_grau)
-
-resultados2 = []
-
-for ciclo in range(1,13):
-
-    df = metro[metro["ciclo"] == ciclo]
-
-    for nome,col in tox_nao.items():
-
-        if col + "_grau" not in df.columns:
-            continue
-
-        grau = df[col + "_grau"]
-
-        eventos = (grau >= 3).sum()
-        avaliados = len(df)
-
-        pct = eventos / avaliados * 100 if avaliados > 0 else np.nan
-
-        resultados2.append({
-            "ciclo": ciclo,
-            "tox": nome,
-            "percentual": pct
-        })
-
-tox_nao_df = pd.DataFrame(resultados2)
-st.header("Non-hematological toxicities across treatment cycles")
-
-fig, ax = plt.subplots(figsize=(12,6))
-
-cores = {
-    "Febrile Neutropenia": "#6b4f2a",
-    "Hepatica tgo": "#8a00ff",
-    "Hepatica tgp": "#00a7a7"
-}
-
-for tox in tox_nao_df["tox"].unique():
-
-    df = tox_nao_df[tox_nao_df["tox"] == tox]
-
-    ax.plot(
-        df["ciclo"],
-        df["percentual"],
-        marker="o",
-        linewidth=3,
-        markersize=8,
-        linestyle="-",
-        label=tox,
-        color=cores.get(tox)
-    )
-
-labels = [f"{c} ({pacientes_por_ciclo.get(c,0)})" for c in range(1,13)]
-
-ax.set_xticks(range(1,13))
+ax.set_xticks(ciclos)
 ax.set_xticklabels(labels, rotation=45)
 
-ax.set_xlabel("Cycle")
 ax.set_ylabel("% of patients with grade ≥3")
+ax.set_xlabel("Cycle")
 
-ax.grid(True, linestyle="--", alpha=0.4)
-
-ax.legend(title="Non-hematological toxicity")
+ax.grid(True)
+ax.legend(title="Hematological toxicity")
 
 st.pyplot(fig)
+
+# =========================================================
+# GRÁFICO NÃO HEMATOLÓGICO
+# =========================================================
+
+st.subheader("Non-hematological toxicities across treatment cycles")
+
+fig2, ax2 = plt.subplots(figsize=(10,5))
+
+ax2.plot(ciclos, febril, marker="o", label="Febrile Neutropenia")
+ax2.plot(ciclos, tgo, marker="o", label="Hepatica tgo")
+ax2.plot(ciclos, tgp, marker="o", label="Hepatica tgp")
+
+ax2.set_xticks(ciclos)
+ax2.set_xticklabels(labels, rotation=45)
+
+ax2.set_ylabel("% of patients with grade ≥3")
+ax2.set_xlabel("Cycle")
+
+ax2.grid(True)
+ax2.legend(title="Non-hematological toxicity")
+
+st.pyplot(fig2)
+
+# =========================================================
+# TABELA COMPLETA
+# =========================================================
+
+st.header("Número de pacientes avaliados por ciclo")
+
+st.markdown("""
+Evento representa o número de pacientes com toxicidade **grau ≥3**.
+Os percentuais foram calculados considerando apenas pacientes avaliados em cada ciclo.
+""")
+
+dados = {
+"Metric":[
+"N_pacientes",
+"AnemiaHBMT - eventos",
+"AnemiaHBMT - Não avaliado",
+"DiarreiaMT - eventos",
+"DiarreiaMT - Não avaliado",
+"Hepatica_BT_MT - eventos",
+"Hepatica_BT_MT - Não avaliado",
+"Hepatica_TGO_MT - eventos",
+"Hepatica_TGO_MT - Não avaliado",
+"Hepatica_TGP_MT - eventos",
+"Hepatica_TGP_MT - Não avaliado",
+"MucositeMT - eventos",
+"MucositeMT - Não avaliado",
+"NauseasMT - eventos",
+"NauseasMT - Não avaliado",
+"NeutropeniaFebreMT - eventos",
+"NeutropeniaFebreMT - Não avaliado",
+"NeutropeniaMT - eventos",
+"NeutropeniaMT - Não avaliado",
+"PerdaDePesoMT - eventos",
+"PerdaDePesoMT - Não avaliado",
+"PlaquetopeniaMT - eventos",
+"PlaquetopeniaMT - Não avaliado",
+"Renal_CreatinaMT - eventos",
+"Renal_CreatinaMT - Não avaliado",
+"VomitosMT - eventos",
+"VomitosMT - Não avaliado"
+],
+
+"Ciclo_1":[
+96,"6 (6.74%)",7,"0 (0.00%)",4,"0 (0.00%)",12,"1 (1.20%)",13,"3 (3.57%)",12,"0 (0.00%)",4,"0 (0.00%)",4,"6 (6.45%)",3,"40 (44.94%)",7,"0 (0.00%)",4,"4 (4.44%)",6,"0 (0.00%)",10,"0 (0.00%)",4
+],
+
+"Ciclo_2":[
+93,"5 (5.81%)",7,"0 (0.00%)",3,"0 (0.00%)",14,"2 (2.56%)",15,"2 (2.50%)",13,"0 (0.00%)",4,"0 (0.00%)",3,"5 (5.56%)",3,"31 (35.63%)",6,"0 (0.00%)",5,"1 (1.18%)",8,"0 (0.00%)",12,"0 (0.00%)",3
+],
+
+"Ciclo_3":[
+90,"4 (4.71%)",5,"0 (0.00%)",1,"0 (0.00%)",14,"1 (1.32%)",14,"1 (1.33%)",15,"0 (0.00%)",1,"0 (0.00%)",1,"6 (6.74%)",1,"28 (32.94%)",5,"0 (0.00%)",3,"0 (0.00%)",6,"0 (0.00%)",10,"0 (0.00%)",2
+],
+
+"Ciclo_4":[
+88,"6 (7.23%)",5,"0 (0.00%)",3,"0 (0.00%)",12,"1 (1.35%)",14,"1 (1.28%)",10,"0 (0.00%)",3,"0 (0.00%)",3,"4 (4.71%)",3,"23 (28.40%)",7,"0 (0.00%)",5,"0 (0.00%)",5,"0 (0.00%)",9,"0 (0.00%)",3
+],
+
+"Ciclo_5":[
+82,"5 (6.58%)",6,"0 (0.00%)",1,"1 (1.47%)",14,"1 (1.49%)",15,"2 (2.90%)",13,"0 (0.00%)",2,"0 (0.00%)",1,"1 (1.23%)",1,"20 (26.32%)",6,"0 (0.00%)",3,"1 (1.32%)",6,"1 (1.41%)",11,"0 (0.00%)",1
+],
+
+"Ciclo_6":[
+74,"3 (4.05%)",0,"0 (0.00%)",0,"0 (0.00%)",12,"1 (1.56%)",10,"1 (1.56%)",10,"0 (0.00%)",1,"0 (0.00%)",0,"1 (1.35%)",0,"16 (21.92%)",1,"0 (0.00%)",2,"0 (0.00%)",1,"0 (0.00%)",10,"0 (0.00%)",0
+],
+
+"Ciclo_7":[
+71,"1 (1.47%)",3,"0 (0.00%)",0,"0 (0.00%)",13,"1 (1.69%)",12,"1 (1.75%)",14,"0 (0.00%)",0,"0 (0.00%)",0,"1 (1.41%)",0,"21 (31.34%)",4,"0 (0.00%)",2,"2 (3.03%)",5,"0 (0.00%)",13,"0 (0.00%)",0
+],
+
+"Ciclo_8":[
+71,"2 (2.86%)",1,"0 (0.00%)",2,"0 (0.00%)",16,"2 (3.45%)",13,"1 (1.75%)",14,"0 (0.00%)",2,"0 (0.00%)",2,"1 (1.45%)",2,"17 (24.29%)",1,"0 (0.00%)",3,"1 (1.45%)",2,"0 (0.00%)",12,"0 (0.00%)",2
+],
+
+"Ciclo_9":[
+69,"3 (4.48%)",2,"0 (0.00%)",1,"0 (0.00%)",15,"1 (1.82%)",14,"1 (1.85%)",15,"0 (0.00%)",1,"0 (0.00%)",1,"1 (1.47%)",1,"12 (17.65%)",1,"0 (0.00%)",2,"1 (1.52%)",3,"0 (0.00%)",16,"0 (0.00%)",1
+],
+
+"Ciclo_10":[
+68,"4 (6.06%)",2,"0 (0.00%)",0,"0 (0.00%)",13,"0 (0.00%)",14,"0 (0.00%)",13,"0 (0.00%)",0,"0 (0.00%)",0,"3 (4.41%)",0,"10 (15.15%)",2,"0 (0.00%)",2,"0 (0.00%)",2,"0 (0.00%)",12,"0 (0.00%)",0
+],
+
+"Ciclo_11":[
+66,"2 (3.12%)",2,"0 (0.00%)",0,"0 (0.00%)",12,"1 (1.82%)",11,"1 (1.82%)",11,"0 (0.00%)",0,"0 (0.00%)",0,"0 (0.00%)",0,"11 (17.19%)",2,"0 (0.00%)",1,"1 (1.59%)",3,"0 (0.00%)",10,"0 (0.00%)",0
+],
+
+"Ciclo_12":[
+62,"3 (5.00%)",2,"0 (0.00%)",1,"0 (0.00%)",13,"0 (0.00%)",13,"0 (0.00%)",14,"0 (0.00%)",1,"0 (0.00%)",1,"0 (0.00%)",2,"10 (16.67%)",2,"0 (0.00%)",2,"2 (3.33%)",2,"0 (0.00%)",12,"0 (0.00%)",1
+],
+
+"Media_Prob":[
+"NA","4.84%","NA","0.00%","NA","0.12%","NA","1.52%","NA","1.69%","NA","0.00%","NA","0.00%","NA","2.90%","NA","26.04%","NA","0.00%","NA","1.49%","NA","0.12%","NA","0.00%","NA"
+]
+}
+
+df_toxicidade = pd.DataFrame(dados)
+
+st.dataframe(df_toxicidade, width="stretch")
