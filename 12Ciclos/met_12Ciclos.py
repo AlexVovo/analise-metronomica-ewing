@@ -9,20 +9,6 @@ from pathlib import Path
 from io import BytesIO
 
 # =========================================================
-# FUNÇÃO EXTRAI GRAU
-# =========================================================
-def extrair_grau(x):
-
-    if pd.isna(x):
-        return np.nan
-
-    try:
-        return int(str(x).split("-")[0])
-
-    except:
-        return np.nan
-
-# =========================================================
 # CONFIG STREAMLIT
 # =========================================================
 st.set_page_config(
@@ -162,47 +148,8 @@ metro["ciclo"] = (
 
 metro = metro[metro["ciclo"] <= 12]
 
-# =========================================================
-# GARANTIR PIOR GRAU POR PACIENTE EM CADA CICLO
-# =========================================================
-
-tox_cols = {
-"AnemiaHBMT":"anemiahbmt",
-"DiarreiaMT":"diarreiamt",
-"Hepatica_BT_MT":"hepatica_bt_mt",
-"Hepatica_TGO_MT":"hepatica_tgo_mt",
-"Hepatica_TGP_MT":"hepatica_tgp_mt",
-"MucositeMT":"mucositemt",
-"NauseasMT":"nauseasmt",
-"NeutropeniaFebreMT":"neutropeniafebremt",
-"NeutropeniaMT":"neutropeniamt",
-"PerdaDePesoMT":"perdadepesomt",
-"PlaquetopeniaMT":"plaquetopeniamt",
-"Renal_CreatinaMT":"renal_creatinamt",
-"VomitosMT":"vomitosmt"
-}
-
-for col in tox_cols.values():
-
-    if col in metro.columns:
-
-        metro[col+"_grau"] = metro[col].apply(extrair_grau)
-
-      
-# manter apenas uma linha por paciente-ciclo
-metro = metro.drop_duplicates(subset=[col_id_metro, "ciclo"])
-
-# metro = metro.sort_values([col_id_metro, "data_1_dia_mt"])
-
-# metro["ciclo"] = (
-#    metro.groupby(col_id_metro)
-#    .cumcount() + 1
-#)
-
-# metro = metro[metro["ciclo"] <= 12]
-
 # 🔴 remover duplicações paciente-ciclo
-# metro = metro.drop_duplicates(subset=[col_id_metro, "ciclo"])
+metro = metro.drop_duplicates(subset=[col_id_metro, "ciclo"])
 
 # =========================================================
 # PACIENTES POR CICLO
@@ -305,39 +252,35 @@ for t in tox_hema.values():
         metro[t+"_grau"] = metro[t].apply(extrair_grau)
 
 # =========================================================
-# CALCULAR EVENTOS (primeira ocorrência ≥3 por paciente)
+# CALCULAR EVENTOS
 # =========================================================
-resultados = []
+resultados=[]
 
-for nome, col in tox_hema.items():
+for ciclo in range(1,13):
 
-    if col+"_grau" not in metro.columns:
-        continue
+    df_ciclo = metro[metro["ciclo"]==ciclo]
 
-    # primeiro ciclo com grau ≥3 por paciente
-    primeiros_eventos = (
-        metro[metro[col+"_grau"] >= 3]
-        .groupby(col_id_metro)["ciclo"]
-        .min()
-    )
+    for nome,col in tox_hema.items():
 
-    for ciclo in range(1,13):
+        if col+"_grau" not in df_ciclo.columns:
+            continue
 
-        eventos = (primeiros_eventos == ciclo).sum()
+        grau = df_ciclo[col+"_grau"]
 
-        avaliados = pacientes_por_ciclo.get(ciclo,0)
+        eventos=(grau>=3).sum()
+        avaliados=len(df_ciclo)
 
         pct = eventos/avaliados*100 if avaliados>0 else np.nan
 
         resultados.append({
-            "ciclo": ciclo,
-            "toxicidade": nome,
-            "eventos": eventos,
-            "avaliados": avaliados,
-            "percentual": pct
+            "ciclo":ciclo,
+            "toxicidade":nome,
+            "eventos":eventos,
+            "avaliados":avaliados,
+            "percentual":pct
         })
 
-tabela2 = pd.DataFrame(resultados)
+tabela2=pd.DataFrame(resultados)
 
 st.header("Tabela 2 – Eventos ≥ grau 3 por ciclo")
 st.table(tabela2)
@@ -444,7 +387,7 @@ for ciclo in range(1,13):
 
         grau = df[col + "_grau"]
 
-        eventos = df.loc[grau >= 3, col_id_metro].nunique()
+        eventos = (grau >= 3).sum()
         avaliados = len(df)
 
         pct = eventos / avaliados * 100 if avaliados > 0 else np.nan
@@ -494,8 +437,3 @@ ax.grid(True, linestyle="--", alpha=0.4)
 ax.legend(title="Non-hematological toxicity")
 
 st.pyplot(fig)
-
-# =========================================================
-# TABELA COMPLETA DE TOXICIDADES POR CICLO
-# =========================================================
-
